@@ -1,1 +1,192 @@
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日報フォーム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f2ec; --surface: #ffffff; --border: #d6cfc4; --border-strong: #b8ad9e;
+    --text: #2a2520; --text-muted: #8a7f72; --accent: #2d5a3d; --accent-light: #e8f0ea;
+    --mono: 'IBM Plex Mono', monospace; --sans: 'Noto Sans JP', sans-serif;
+  }
+  body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; padding: 32px 16px; }
+  .container { max-width: 680px; margin: 0 auto; }
+  .header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 2px solid var(--text); }
+  .header-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+  .header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 24px; margin-bottom: 16px; }
+  .section-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .date-row input[type="date"] { font-family: var(--mono); font-size: 15px; font-weight: 500; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; background: var(--bg); color: var(--text); outline: none; }
+  .date-row input[type="date"]:focus { border-color: var(--accent); }
+  .schedule-block { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .schedule-block-header { background: var(--bg); padding: 6px 12px; font-family: var(--mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .time-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+  .time-input { font-family: var(--mono); font-size: 13px; width: 80px; border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; background: var(--surface); color: var(--text); outline: none; }
+  .time-input:focus { border-color: var(--accent); }
+  .time-sep { font-family: var(--mono); color: var(--text-muted); font-size: 13px; }
+  .task-input { flex: 1; font-family: var(--sans); font-size: 14px; border: 1px solid var(--border); border-radius: 3px; padding: 5px 10px; background: var(--surface); color: var(--text); outline: none; }
+  .task-input:focus { border-color: var(--accent); }
+  .btn-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px 6px; line-height: 1; border-radius: 3px; transition: color 0.15s, background 0.15s; }
+  .btn-remove:hover { color: #c0392b; background: #fde8e8; }
+  .btn-add { display: flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border-strong); border-radius: 4px; padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--text-muted); cursor: pointer; width: 100%; transition: border-color 0.2s, color 0.2s, background 0.2s; margin-top: 8px; }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .impressions-textarea { width: 100%; font-family: var(--sans); font-size: 14px; line-height: 1.7; border: 1px solid var(--border); border-radius: 4px; padding: 12px; background: var(--bg); color: var(--text); outline: none; resize: vertical; min-height: 100px; transition: border-color 0.2s; }
+  .impressions-textarea:focus { border-color: var(--accent); }
+  .preview-box { background: #1a1a18; border-radius: 6px; padding: 20px 22px; font-family: var(--mono); font-size: 13px; line-height: 1.8; color: #c8c0b0; border: 1px solid #333; }
+  .preview-line { white-space: pre-wrap; word-break: break-word; }
+  .preview-heading { color: #e8d5a3; font-weight: 500; }
+  .preview-date { color: #ffffff; font-weight: 500; }
+  .preview-code-block { background: #111110; border: 1px solid #2e2e2a; border-radius: 4px; margin: 4px 0 8px; overflow: hidden; }
+  .preview-code-block-bar { background: #252520; padding: 4px 10px; display: flex; align-items: center; gap: 5px; border-bottom: 1px solid #2e2e2a; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+  .preview-code-block-body { padding: 10px 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; color: #a8e6b8; white-space: pre-wrap; word-break: break-word; }
+  .copy-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: white; border: none; border-radius: 5px; padding: 12px 28px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; cursor: pointer; width: 100%; margin-top: 12px; transition: background 0.2s, transform 0.1s; }
+  .copy-btn:hover { background: #1e3f2a; }
+  .copy-btn:active { transform: scale(0.98); }
+  .copy-btn.copied { background: #555; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-label">地域おこし協力隊 / 清里町</div>
+    <h1>日報フォーム</h1>
+  </div>
+  <div class="card">
+    <div class="section-title">日付</div>
+    <div class="date-row"><input type="date" id="report-date"></div>
+  </div>
+  <div class="card">
+    <div class="section-title">■ 本日の業務</div>
+    <div id="today-schedule"></div>
+    <button class="btn-add" onclick="addEntry('today')">＋ 業務を追加</button>
+  </div>
+  <div class="card">
+    <div class="section-title">■ 所感</div>
+    <textarea class="impressions-textarea" id="impressions" placeholder="本日の感想・気づきなどを入力してください"></textarea>
+  </div>
+  <div class="card">
+    <div class="section-title">■ 次回の稼働予定内容</div>
+    <div id="next-schedule"></div>
+    <button class="btn-add" onclick="addEntry('next')">＋ 業務を追加</button>
+  </div>
+  <div class="card">
+    <div class="section-title">プレビュー / コピー</div>
+    <div class="preview-box" id="preview"></div>
+    <button class="copy-btn" id="copy-btn" onclick="copyText()">
+      <span>📋</span><span>クリップボードにコピー</span>
+    </button>
+  </div>
+</div>
+<script>
+  const todayEntries = [
+    { start: '08:15', end: '12:00', task: 'ガイドブック作業' },
+    { start: '13:00', end: '17:00', task: 'ガイドブック作業' },
+  ];
+  const nextEntries = [
+    { start: '08:15', end: '12:00', task: 'ガイドブック作業' },
+    { start: '13:00', end: '17:00', task: 'ガイドブック作業' },
+  ];
+  const d = new Date();
+  document.getElementById('report-date').value = d.toISOString().slice(0, 10);
+  function renderSchedule(section, entries) {
+    const container = document.getElementById(section + '-schedule');
+    container.innerHTML = '';
+    entries.forEach((entry, i) => {
+      const block = document.createElement('div');
+      block.className = 'schedule-block';
+      block.innerHTML = `
+        <div class="schedule-block-header">
+          <span>業務 ${i + 1}</span>
+          <button class="btn-remove" onclick="removeEntry('${section}', ${i})">✕</button>
+        </div>
+        <div class="time-row">
+          <input class="time-input" type="time" value="${entry.start}" oninput="updateEntry('${section}', ${i}, 'start', this.value)">
+          <span class="time-sep">–</span>
+          <input class="time-input" type="time" value="${entry.end}" oninput="updateEntry('${section}', ${i}, 'end', this.value)">
+          <input class="task-input" type="text" value="${entry.task}" placeholder="業務内容" oninput="updateEntry('${section}', ${i}, 'task', this.value)">
+        </div>
+      `;
+      container.appendChild(block);
+    });
+    updatePreview();
+  }
+  function addEntry(section) {
+    const arr = section === 'today' ? todayEntries : nextEntries;
+    const last = arr[arr.length - 1];
+    arr.push({ start: last ? last.end : '09:00', end: last ? last.end : '12:00', task: '' });
+    renderSchedule(section, arr);
+  }
+  function removeEntry(section, i) {
+    const arr = section === 'today' ? todayEntries : nextEntries;
+    arr.splice(i, 1);
+    renderSchedule(section, arr);
+  }
+  function updateEntry(section, i, field, val) {
+    const arr = section === 'today' ? todayEntries : nextEntries;
+    arr[i][field] = val;
+    updatePreview();
+  }
+  function getDateLabel() {
+    const val = document.getElementById('report-date').value;
+    if (!val) return '';
+    const [y, m, day] = val.split('-');
+    return `${parseInt(m)}月${parseInt(day)}日`;
+  }
+  function scheduleText(entries) {
+    return entries.map(e => `${e.start}-${e.end}　${e.task}`).join('\n');
+  }
+  function buildText() {
+    const date = getDateLabel();
+    const impressions = document.getElementById('impressions').value || '（未入力）';
+    return `${date}　日報\n■本日の業務\n\`\`\`\n${scheduleText(todayEntries)}\n\`\`\`\n■所感\n\`\`\`\n${impressions}\n\`\`\`\n■次回の稼働予定内容\n\`\`\`\n${scheduleText(nextEntries)}\n\`\`\``;
+  }
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function codeBlock(content) {
+    return `<div class="preview-code-block">
+      <div class="preview-code-block-bar">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+      </div>
+      <div class="preview-code-block-body">${escHtml(content)}</div>
+    </div>`;
+  }
+  function updatePreview() {
+    const date = getDateLabel();
+    const impressions = document.getElementById('impressions').value || '（未入力）';
+    const html = `<div class="preview-line preview-date">${escHtml(date)}　日報</div>
+<div class="preview-line preview-heading">■本日の業務</div>
+${codeBlock(scheduleText(todayEntries))}
+<div class="preview-line preview-heading">■所感</div>
+${codeBlock(impressions)}
+<div class="preview-line preview-heading">■次回の稼働予定内容</div>
+${codeBlock(scheduleText(nextEntries))}`;
+    document.getElementById('preview').innerHTML = html;
+  }
+  function copyText() {
+    const text = buildText();
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.innerHTML = '<span>✓</span><span>コピーしました！</span>';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = '<span>📋</span><span>クリップボードにコピー</span>';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+  document.getElementById('report-date').addEventListener('input', updatePreview);
+  document.getElementById('impressions').addEventListener('input', updatePreview);
+  renderSchedule('today', todayEntries);
+  renderSchedule('next', nextEntries);
+</script>
+</body>
+</html>
